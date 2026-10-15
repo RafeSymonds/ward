@@ -70,3 +70,16 @@ Greenfield. No prior code or design docs. Host facts gathered for the design:
 
 human_review_gate: pending
 next_step: /goldfish docs/designs/ward.md (round 1 on sections 1-3), then write Detailed Implementation
+
+## Goldfish round 1 decisions (2026-10-14)
+
+- G7 approved: per-project container-only folders in ward config, volume-backed (node_modules, .venv, target/).
+- G6 approved: every session runs under `ward-agent session`, tied to its bridge, with a session ID used by stand-ins, status line, and port forwarding.
+- G5 approved: ward drops OSC 52 from container output.
+- G4 decided: no access to the host or local network by default. Allowlist configuration may come later.
+- G3 approved: rootless Docker on Linux runs the agent as container root (maps to host user). Rootful Docker on Linux runs the agent without sudo. macOS unaffected.
+- G2 decided: no project snapshots. User is not worried about deletion inside the project.
+- G1 decided: the project folder is fully writable, including `.git` and `.claude/`. Read-only applies to host paths outside the project. User: "the folder should be write and readonly should be the other things." Reason: tested on Docker Desktop that RO sub-mounts are bypassable (F21 rename `.git` and plant a hook, F22 whole-`.git` RO blocks commits, F23 nested repo with core.fsmonitor runs on host `git status`), and the user rejects bypassable read-only. Rejected: RO sub-mounts, O35 filtered sync, O36 FUSE filter, O37 mount hardening. Q16 protected list is moot. Consequence for Limits (R9): the agent can change git hooks, git config, project Claude settings and other files host tools run automatically.
+- Q19 decided: "anything claude needs should be write and then read only can be other things." `~/.claude/projects/<key>` stays a live RW bind. Read-only applies to extra mounts. Host config stays copied in, not mounted (O28, F12).
+- Q21 open: under the Q19 rule, `projects/<key>/memory` would become RW, reversing F7. Proposed yes, because project CLAUDE.md and `.claude/settings.json` are now writable (G1) and host sessions load them the same way.
+- G8-G22: proposed fixes, not yet explicitly approved.
